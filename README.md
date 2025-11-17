@@ -20,3 +20,10 @@ Estructura de Microservicios
 README.md: Documentación clara del proyecto.
 
 requirements.txt: Listado de dependencias de Python.
+
+
+Cada vez que queramos hacer actualizaciones hay que seguir estos pasos:
+    1.- git status (revisamos lo que se está cambiando y que está o no dentro de la actualizacion)
+    2.- git add . (añade todo lo que estamos actualizando o añadiendo) git add + "nombre archivo" en caso de una sola cosa
+    3.- git commit -m "comentario" (importante para llevar un correcto versionamiento)
+    4.- git push (finalizar la actualización)
