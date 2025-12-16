@@ -14,6 +14,9 @@ PREP_PATH     = os.getenv("PREP_PATH",  os.path.join(ARTIFACTS_DIR, "preprocesso
 FEATS_PATH    = os.getenv("FEATS_PATH", os.path.join(ARTIFACTS_DIR, "feature_names.json"))
 MODEL_VERSION = os.getenv("MODEL_VERSION", "v1")
 
+# Clase positiva (rechazo). Ajusta si tu etiqueta no es "1".
+POSITIVE_CLASS = os.getenv("POSITIVE_CLASS", "1")  # puede ser "1", "RECHAZO",
+
 _model = None
 _prep  = None
 _feature_names: List[str] = []
@@ -83,19 +86,30 @@ def _to_dataframe(features: Dict[str, Any]) -> pd.DataFrame:
 
 def _predict_proba_estimator(X):
     # sklearn estimators / pipelines
+    
     if hasattr(_model, "predict_proba"):
-        proba = _model.predict_proba(X)
-        # Seleccionar la columna correcta según el orden real de las clases
+        proba = _model.predict_proba(X)  # shape: (n, n_classes)
         classes_ = getattr(_model, "classes_", None)
+
+        # Normaliza las clases a str para comparar con POSITIVE_CLASS
         if classes_ is not None:
+            classes_str = [str(c) for c in classes_]
             try:
-                idx_rechazo = list(classes_).index(1)  # asumiendo que y=1 es "rechazo"
+                idx_rechazo = classes_str.index(str(POSITIVE_CLASS))  # p.ej., "1" o "RECHAZO"
             except ValueError:
-                # Si la etiqueta 1 no existe, usar la segunda columna si hay binario
+                # Si no está, asume binario y toma la segunda columna (estándar en sklearn)
                 idx_rechazo = 1 if proba.shape[1] > 1 else 0
         else:
-            # Fallback si no hay classes_
             idx_rechazo = 1 if proba.shape[1] > 1 else 0
+
+        # DEBUG opcional para verificar columnas y clases (puedes quitar estos prints luego)
+        try:
+            p0 = float(proba[0, 0])
+            p1 = float(proba[0, 1]) if proba.shape[1] > 1 else None
+            print(f"[DEBUG] classes={classes_} POSITIVE_CLASS={POSITIVE_CLASS} "
+                f"idx_rechazo={idx_rechazo} proba0={p0} proba1={p1}")
+        except Exception:
+            pass
 
     # XGBoost Booster
     try:
