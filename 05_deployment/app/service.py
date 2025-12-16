@@ -85,10 +85,17 @@ def _predict_proba_estimator(X):
     # sklearn estimators / pipelines
     if hasattr(_model, "predict_proba"):
         proba = _model.predict_proba(X)
-        return float(proba[:, 1][0])
-    if hasattr(_model, "decision_function"):
-        score = _model.decision_function(X)
-        return float(1 / (1 + np.exp(-score[0])))
+        # Seleccionar la columna correcta según el orden real de las clases
+        classes_ = getattr(_model, "classes_", None)
+        if classes_ is not None:
+            try:
+                idx_rechazo = list(classes_).index(1)  # asumiendo que y=1 es "rechazo"
+            except ValueError:
+                # Si la etiqueta 1 no existe, usar la segunda columna si hay binario
+                idx_rechazo = 1 if proba.shape[1] > 1 else 0
+        else:
+            # Fallback si no hay classes_
+            idx_rechazo = 1 if proba.shape[1] > 1 else 0
 
     # XGBoost Booster
     try:
