@@ -1,0 +1,1 @@
+Genera report.html con métricas y gráficos. Ejecuta: python 04_evaluation/make_report.py
